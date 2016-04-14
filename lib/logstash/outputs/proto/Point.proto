@@ -1,0 +1,15 @@
+syntax = "proto3";
+option optimize_for = SPEED;
+
+//Our point
+message Point {
+    //The date as int64 (java long)
+    int64 t = 1;
+    double v = 2;
+}
+
+//The data of a time series is a list of points
+message Points {
+    //The list of points
+    repeated Point p = 1;
+}
