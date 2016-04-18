@@ -1,5 +1,9 @@
-language: ruby
+#language: ruby
+#rvm:
+#  - 2.2
+#  - jruby
+#  - rbx-2
+
+cache: bundler
 rvm:
-  - 2.2
-  - jruby
-  - rbx-2
+  - jruby-1.7.24
