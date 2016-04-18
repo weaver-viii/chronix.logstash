@@ -21,8 +21,7 @@ describe LogStash::Outputs::Chronix do
     let(:events) { [LogStash::Event.new("metric" => tmetric, "value" => "1.5")] }
 
     it "create one event" do
-#      expect(solr.size).to eq(1)
-      expect(solr.size).to eq(0)
+      expect(solr.size).to eq(1)
     end
 
     it "should retrieve document" do

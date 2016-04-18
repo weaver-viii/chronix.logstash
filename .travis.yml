@@ -1,9 +1,9 @@
 language: ruby
 cache: bundler
-#rvm:
-#  - 2.2
-#  - jruby
-#  - rbx-2
 rvm:
-  - jruby-1.7.24
+  - 2.2
+  - jruby
+  - rbx-2
+#rvm:
+#  - jruby-1.7.24
 script: bundle exec rspec
