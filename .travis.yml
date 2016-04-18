@@ -7,3 +7,4 @@
 cache: bundler
 rvm:
   - jruby-1.7.24
+script: bundle exec rspec
