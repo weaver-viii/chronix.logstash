@@ -6,7 +6,7 @@ This is a plugin for [Logstash](https://github.com/elastic/logstash) to write ti
 
 ## Install the plugin
 
-There are two options to install the plugin. (check one the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference.
+There are two options to install the plugin. (check one the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference)
 
 ### Install in a local Logstash Clone:
 - Edit Logstash `Gemfile` and add the local plugin path, for example:
