@@ -51,11 +51,11 @@ You also have to add Chronix to your output. You can add some custom values to c
 Here is an example with all the configuration options:
 ```
 chronix {
-  host => "192.168.0.1"		# default is 'localhost'
-  port => "8983"		# default is '8983'
-  path => "/solr/chronix/"	# default is '/solr/chronix/'
-  flush_size => 100		# default is '100' (Number of events to queue up before writing to Solr)
-  idle_flush_time => 30		# default is '30'  (Amount of time since the last flush before a flush is done)
+  host => "192.168.0.1"       # default is 'localhost'
+  port => "8983"              # default is '8983'
+  path => "/solr/chronix/"    # default is '/solr/chronix/'
+  flush_size => 100           # default is '100' (Number of events to queue up before writing to Solr)
+  idle_flush_time => 30       # default is '30'  (Amount of time since the last flush before a flush is done)
 }
 ```
 
