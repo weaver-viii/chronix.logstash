@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/ChronixDB/chronix.logstash.svg?branch=master)](https://travis-ci.org/ChronixDB/chronix.logstash)
 
-This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to Chronix released under the Apache 2.0 license.
+This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the Apache 2.0 license.
 
 ## Install the plugin
 
@@ -39,8 +39,8 @@ bin/plugin install /path/to/logstash/plugin/logstash-output-chronix.gem
 
 ## Configuration
 
-Chronix always needs a 'metric' to store your data. During the filter-phase you should at least add a metric-field to your data.
-Example:
+Chronix always needs a 'metric' to store your data.
+During the filter-phase you should at least add a metric-field to your data:
 ```
 filter {
   mutate { add_field => { "metric" => "your_metric" } }
