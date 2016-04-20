@@ -24,5 +24,4 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "rsolr"
   s.add_runtime_dependency "protobuf"
   s.add_development_dependency "logstash-devutils"
-  s.add_development_dependency "rspec-wait"
 end

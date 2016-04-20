@@ -36,6 +36,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   public
   def register
+    # initialize the buffer
     buffer_initialize(
       :max_items => @flush_size,
       :max_interval => @idle_flush_time,
@@ -45,6 +46,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     connectToChronix
   end # def register
 
+  # open the connection to chronix
   def connectToChronix
     @url = "http://" + @host + ":" + @port + @path
     @solr = RSolr.connect :url => @url
@@ -59,22 +61,29 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   def flush(events, close=false)
     pointHash = Hash.new
 
+    # add each event to our hash, sorted by metrics as key
     events.each do |event|
       eventData = event.to_hash()
+
+      # format the timestamp to unix format
       timestamp = DateTime.iso8601("#{eventData["@timestamp"]}").to_time.to_i
       metric = eventData["metric"]
 
+      # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
         pointHash[metric] = {"startTime" => timestamp, "endTime" => timestamp, "points" => Chronix::Points.new}
       end
 
       pointHash[metric]["endTime"] = timestamp
+
+      # insert the current point in our list
       pointHash[metric]["points"].p << createChronixPoint(timestamp, eventData["value"])
 
     end #end do
     
     documents = []
-    # iterate through pointHash and zip all the data
+
+    # iterate through pointHash and create a solr document
     pointHash.each { |metric, phash|
       documents << createSolrDocument(metric, phash)
     }
@@ -84,9 +93,13 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     @solr.update :data => '<commit/>'
   end #def flush
 
+  # this method zips and base64 encodes the list of points
   def zipAndEncode(points)
+    # encode protobuf-list
     proto_bytes = points.encode
     string_io = StringIO.new("w")
+
+    # compress the encoded protobuf-list
     gz = Zlib::GzipWriter.new(string_io)
     gz.write(proto_bytes)
     gz.close
