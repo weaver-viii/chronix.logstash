@@ -39,8 +39,8 @@ bin/plugin install /path/to/logstash/plugin/logstash-output-chronix.gem
 
 ## Configuration
 
-Chronix always needs a 'metric' to store your data.
-During the filter-phase you should at least add a metric-field to your data:
+Chronix always needs a 'metric' and a 'value' to store your data.
+If your data doesn't contain a metric yet, you should add one during the filter-phase:
 ```
 filter {
   mutate { add_field => { "metric" => "your_metric" } }
