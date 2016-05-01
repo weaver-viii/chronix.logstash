@@ -48,6 +48,12 @@ describe LogStash::Outputs::Chronix do
       expectedResult = Chronix::Point.new( :t => ttimestamp, :v => tvalue )
       expect(point).to eq(expectedResult)
     end
+
+    it "should return a Chronix::Point with :t == 0" do
+      point = subject.createChronixPoint(nil, tvalue)    
+      expectedResult = Chronix::Point.new( :t => 0, :v => tvalue )
+      expect(point).to eq(expectedResult)
+    end
  
     it "should return a zipped and base64 encoded string containing the data" do
       points = Chronix::Points.new
@@ -59,9 +65,9 @@ describe LogStash::Outputs::Chronix do
     it "should create a valid document" do
       points = Chronix::Points.new
       points.p << subject.createChronixPoint(ttimestamp, tvalue)
-      phash = {"startTime" => ttimestamp, "endTime" => ttimestamp, "points" => points}
+      phash = {"startTime" => ttimestamp, "lastTimestamp" => ttimestamp, "points" => points}
       document = subject.createSolrDocument(tmetric, phash)
-      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["endTime"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==" }
+      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==" }
       expect(document).to eq(sampleDoc)
     end
 
@@ -69,6 +75,10 @@ describe LogStash::Outputs::Chronix do
       solr.delete(tmetric)
       expect(solr.size).to eq(0)
     end
+  end
+
+  context "test delta calculation" do
+    # TODO
   end
 
   # these events are needed for the next two test-contexts
