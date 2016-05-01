@@ -78,7 +78,10 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # insert the current point in our list
       pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
+
+      # save current timestamp as lastTimestamp and the overall delta for the current metric
       pointHash[metric]["lastTimestamp"] = timestamp
+      pointHash[metric]["delta"] = pointHash[metric]["delta"] + delta
 
     end #end do
     
@@ -119,7 +122,8 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   end
 
   def createSolrDocument(metric, phash)
-    return { :metric => metric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => zipAndEncode(phash["points"]) }
+    endTime = phash["startTime"] + phash["delta"]
+    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]) }
   end
 
   def calculateDelta(timestamp, lastTimestamp)
