@@ -80,11 +80,6 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   def createPointHash(events)
     pointHash = Hash.new
 
-    previousDate = 0
-    previousOffset = 0
-    timesSinceLastOffset = 1
-    lastStoredDate = 0
-
     # add each event to our hash, sorted by metrics as key
     events.each do |event|
 
@@ -96,25 +91,28 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => timestamp, "points" => Chronix::Points.new}
+        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => timestamp, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 1, "lastStoredDate" => timestamp}
       end
 
       delta = timestamp - pointHash[metric]["lastTimestamp"]
 
-      if (almostEquals(previousOffset, delta) && noDrift(timestamp, lastStoredDate, timesSinceLastOffset))
-        delta = 0
-        timesSinceLastOffset += 1
-      else
-        timesSinceLastOffset = 1
-        lastStoredDate = timestamp
-      end
+      if (almostEquals(delta, pointHash[metric]["prevDelta"]) && noDrift(timestamp, pointHash[metric]["lastStoredDate"], pointHash[metric]["timeSinceLastDelta"]))
+        # insert the current point in our list
+        pointHash[metric]["points"].p << createChronixPoint(0, eventData["value"])
+        
+        pointHash[metric]["timeSinceLastDelta"] += 1
 
-      # insert the current point in our list
-      pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
+      else
+        # insert the current point in our list
+        pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
+
+        pointHash[metric]["timeSinceLastDelta"] = 1
+        pointHash[metric]["lastStoredDate"] = timestamp
+      end
 
       # save current timestamp as lastTimestamp and the previousOffset
       pointHash[metric]["lastTimestamp"] = timestamp
-      previousOffset = delta
+      pointHash[metric]["prevDelta"] = delta
 
     end #end do
 
@@ -147,15 +145,15 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   end
 
   # checks if two offsets are almost equals
-  def almostEquals(delta, previousOffset)
-    diff = (delta - previousOffset).abs
+  def almostEquals(delta, prevDelta)
+    diff = (delta - prevDelta).abs
 
     return (diff <= @threshold)
   end
 
   # checks if there is a drift
-  def noDrift(timestamp, lastStoredDate, timesSinceLastOffset)
-    calcMaxOffset = @threshold * timesSinceLastOffset
+  def noDrift(timestamp, lastStoredDate, timeSinceLastDelta)
+    calcMaxOffset = @threshold * timeSinceLastDelta
     drift = lastStoredDate + calcMaxOffset - timestamp.to_i
 
     return (drift <= (@threshold / 2))

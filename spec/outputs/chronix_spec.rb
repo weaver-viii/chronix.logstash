@@ -66,7 +66,7 @@ describe LogStash::Outputs::Chronix do
     it "should create a correct point hash" do
       points = Chronix::Points.new
       points.p << subject.createChronixPoint(0, tvalue)
-      phash = {tmetric => {"startTime" => ttimestamp.to_i, "lastTimestamp" => ttimestamp.to_i, "points" => points}}
+      phash = {tmetric => {"startTime" => ttimestamp.to_i, "lastTimestamp" => ttimestamp.to_i, "points" => points, "prevDelta" => 0, "timeSinceLastDelta" => 1, "lastStoredDate" => ttimestamp.to_i}}
       events = [LogStash::Event.new("metric" => tmetric, "value" => tvalue, "@timestamp" => "2016-03-30T15:54:32.172Z")]
       expect(subject.createPointHash(events)).to eq(phash)
     end
@@ -87,10 +87,29 @@ describe LogStash::Outputs::Chronix do
   end
 
   context "test delta calculation" do
-    subject { LogStash::Outputs::Chronix.new( "threshold" => 10, "flush_size" => 1, "idle_flush_time" => 10 ) }
+    # no flushing of the buffer needed, that's why we use 3 as flush_size here
+    subject { LogStash::Outputs::Chronix.new( "threshold" => 10, "flush_size" => 3, "idle_flush_time" => 10 ) }
 
     let(:tmetric) { "test1" }
-    let(:events) { [LogStash::Event.new("metric" => tmetric, "value" => "1.5", "@timestamp" => "1980-10-04T05:10:11.733Z")] }
+    let(:tvalue) { "10.5" }
+    let(:events) { [LogStash::Event.new("metric" => tmetric, "value" => tvalue)] }
+    
+    p_ev = []
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "1.0", "@timestamp" => "2016-05-10T15:00:10.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "2.0", "@timestamp" => "2016-05-10T15:00:20.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "3.0", "@timestamp" => "2016-05-10T15:00:30.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "4.0", "@timestamp" => "2016-05-10T15:00:39.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "5.0", "@timestamp" => "2016-05-10T15:00:48.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "6.0", "@timestamp" => "2016-05-10T15:00:57.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "7.0", "@timestamp" => "2016-05-10T15:01:06.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "8.0", "@timestamp" => "2016-05-10T15:01:15.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "9.0", "@timestamp" => "2016-05-10T15:01:24.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "10.0", "@timestamp" => "2016-05-10T15:01:33.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "11.0", "@timestamp" => "2016-05-10T15:01:42.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "12.0", "@timestamp" => "2016-05-10T15:01:51.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "13.0", "@timestamp" => "2016-05-10T15:02:00.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "14.0", "@timestamp" => "2016-05-10T15:02:09.000Z")
+    p_ev << LogStash::Event.new("metric" => "test1", "value" => "15.0", "@timestamp" => "2016-05-10T15:02:18.000Z")
 
     it "delta should not be almost equals" do
       expect(subject.almostEquals(21, 10)).to be false
@@ -107,22 +126,28 @@ describe LogStash::Outputs::Chronix do
     it "should have a drift" do
       expect(subject.noDrift(10, 5, 2)).to be false
     end
+
+    it "should return a point hash" do
+      pointHash = subject.createPointHash(p_ev)
+#      puts pointHash
+      expect(pointHash).to_not be_nil
+    end
   end
 
   # these events are needed for the next two test-contexts
-  e1 = LogStash::Event.new("metric" => "test1", "value" => "1.5")
-  e2 = LogStash::Event.new("metric" => "test2", "value" => "2.5")
-  e3 = LogStash::Event.new("metric" => "test1", "value" => "3.5")
-  e4 = LogStash::Event.new("metric" => "test1", "value" => "4.5")
-  e5 = LogStash::Event.new("metric" => "test2", "value" => "5.5")
-  e6 = LogStash::Event.new("metric" => "test3", "value" => "6.5")
-  e7 = LogStash::Event.new("metric" => "test1", "value" => "7.5")
-  e8 = LogStash::Event.new("metric" => "test2", "value" => "8.5")
+  e21 = LogStash::Event.new("metric" => "test1", "value" => "1.5")
+  e22 = LogStash::Event.new("metric" => "test2", "value" => "2.5")
+  e23 = LogStash::Event.new("metric" => "test1", "value" => "3.5")
+  e24 = LogStash::Event.new("metric" => "test1", "value" => "4.5")
+  e25 = LogStash::Event.new("metric" => "test2", "value" => "5.5")
+  e26 = LogStash::Event.new("metric" => "test3", "value" => "6.5")
+  e27 = LogStash::Event.new("metric" => "test1", "value" => "7.5")
+  e28 = LogStash::Event.new("metric" => "test2", "value" => "8.5")
 
   context "adding and removing tests with different metrics" do
     subject { LogStash::Outputs::Chronix.new( "flush_size" => 1, "idle_flush_time" => 10 ) }
 
-    let(:events) { [e1, e2, e3, e4, e5, e6, e7, e8] }
+    let(:events) { [e21, e22, e23, e24, e25, e26, e27, e28] }
 
     it "should have 3 different metrics" do
       expect(solr.size).to eq(3)
@@ -157,7 +182,7 @@ describe LogStash::Outputs::Chronix do
 
     subject { LogStash::Outputs::Chronix.new( "flush_size" => 4, "idle_flush_time" => 10 ) }
 
-    let(:events) { [e1, e2, e3, e4, e5, e6, e7, e8] }
+    let(:events) { [e21, e22, e23, e24, e25, e26, e27, e28] }
 
     it "should have 3 different metrics" do
       expect(solr.size).to eq(3)
