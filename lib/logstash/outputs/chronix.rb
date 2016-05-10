@@ -64,6 +64,11 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   def flush(events, close=false)
     pointHash = Hash.new
 
+    previousDate = 0
+    previousOffset = 0
+    timesSinceLastOffset = 1
+    lastStoredDate = 0
+
     # add each event to our hash, sorted by metrics as key
     events.each do |event|
 
@@ -75,17 +80,25 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "delta" => 0, "lastTimestamp" => timestamp, "points" => Chronix::Points.new}
+        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => timestamp, "points" => Chronix::Points.new}
       end
 
-      delta = calculateDelta(timestamp, pointHash[metric]["lastTimestamp"])
+      delta = timestamp - pointHash[metric]["lastTimestamp"]
+
+      if (almostEquals(previousOffset, delta) && noDrift(timestamp, lastStoredDate, timesSinceLastOffset))
+        delta = 0
+        timesSinceLastOffset += 1
+      else
+        timesSinceLastOffset = 1
+        lastStoredDate = timestamp
+      end 
 
       # insert the current point in our list
       pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
 
-      # save current timestamp as lastTimestamp and the overall delta for the current metric
+      # save current timestamp as lastTimestamp and the previousOffset
       pointHash[metric]["lastTimestamp"] = timestamp
-      pointHash[metric]["delta"] = pointHash[metric]["delta"] + delta
+      previousOffset = delta
 
     end #end do
 
@@ -126,15 +139,17 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]), :threshold => @threshold }
   end
 
-  def calculateDelta(timestamp, lastTimestamp)
-    offset = timestamp - lastTimestamp
+  def almostEquals(delta, previousOffset)
+    diff = (delta - previousOffset).abs
 
-    # if the current offset is less than threshold, return nil -> don't save the offset
-    if offset <= @threshold
-      return 0
-    else
-      return offset
-    end
+    return (diff <= @threshold)
+  end
+
+  def noDrift(timestamp, lastStoredDate, timesSinceLastOffset)
+    calcMaxOffset = @threshold * timesSinceLastOffset
+    drift = lastStoredDate + calcMaxOffset + timestamp.to_i
+
+    return (drift <= (@threshold / 2))
   end
 
 end # class LogStash::Outputs::Chronix
