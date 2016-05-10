@@ -27,7 +27,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   # path to chronix, default: /solr/chronix/
   config :path, :validate => :string, :default => "/solr/chronix/"
 
-  # threshold for delta-calculation, every delta < threashold will be nulled
+  # threshold for delta-calculation, every (delta - prev_delta) < threshold will be nulled
   config :threshold, :validate => :number, :default => 10
 
   # Number of events to queue up before writing to Solr
