@@ -6,9 +6,18 @@ This is a plugin for [Logstash](https://github.com/elastic/logstash) to write ti
 
 ## Install the plugin
 
-There are two options to install the plugin. (check one the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference)
+There are two options to install the plugin. (check also the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference)
 
-### Install in a local Logstash Clone:
+### Install via gem install
+Just type 
+```sh
+gem install logstash-output-chronix
+```
+to install the plugin. See the [configuration-section](#configuration) for configuration options.
+
+### Install manually
+
+#### Install in a local Logstash Clone
 - Edit Logstash `Gemfile` and add the local plugin path, for example:
 ```ruby
 gem "logstash-output-chronix", :path => "/path/to/logstash-output-chronix"
@@ -22,7 +31,7 @@ bin/plugin install --no-verify
 bin/logstash -e your_config.conf
 ```
 
-### Run in an installed Logstash
+#### Run in an installed Logstash
 
 You can use the same method to run your plugin in an installed Logstash by editing its `Gemfile` and pointing the `:path` to your local plugin development directory or you can build the gem and install it using:
 
