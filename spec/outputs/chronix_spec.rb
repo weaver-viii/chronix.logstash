@@ -63,6 +63,14 @@ describe LogStash::Outputs::Chronix do
       expect(subject.zipAndEncode(points)).to eq(expectedResult)
     end
 
+    it "should create a correct point hash" do
+      points = Chronix::Points.new
+      points.p << subject.createChronixPoint(0, tvalue)
+      phash = {tmetric => {"startTime" => ttimestamp.to_i, "lastTimestamp" => ttimestamp.to_i, "points" => points}}
+      events = [LogStash::Event.new("metric" => tmetric, "value" => tvalue, "@timestamp" => "2016-03-30T15:54:32.172Z")]
+      expect(subject.createPointHash(events)).to eq(phash)
+    end
+
     it "should create a valid document" do
       points = Chronix::Points.new
       points.p << subject.createChronixPoint(ttimestamp, tvalue)
@@ -78,9 +86,28 @@ describe LogStash::Outputs::Chronix do
     end
   end
 
-#  context "test delta calculation" do
-    # TODO
-#  end
+  context "test delta calculation" do
+    subject { LogStash::Outputs::Chronix.new( "threshold" => 10, "flush_size" => 1, "idle_flush_time" => 10 ) }
+
+    let(:tmetric) { "test1" }
+    let(:events) { [LogStash::Event.new("metric" => tmetric, "value" => "1.5", "@timestamp" => "1980-10-04T05:10:11.733Z")] }
+
+    it "delta should not be almost equals" do
+      expect(subject.almostEquals(21, 10)).to be false
+    end
+
+    it "delta should be almost equals" do
+      expect(subject.almostEquals(-18, -10)).to be true
+    end
+
+    it "should have no drift" do
+      expect(subject.noDrift(10, 5, 1)).to be true
+    end
+
+    it "should have a drift" do
+      expect(subject.noDrift(10, 5, 2)).to be false
+    end
+  end
 
   # these events are needed for the next two test-contexts
   e1 = LogStash::Event.new("metric" => "test1", "value" => "1.5")

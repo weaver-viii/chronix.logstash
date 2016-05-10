@@ -62,6 +62,22 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   public
   def flush(events, close=false)
+    pointHash = createPointHash(events)
+
+    documents = []
+
+    # iterate through pointHash and create a solr document
+    pointHash.each { |metric, phash|
+      documents << createSolrDocument(metric, phash)
+    }
+
+    # send to chronix
+    @solr.add documents
+    @solr.update :data => '<commit/>'
+  end #def flush
+
+  # this method iterates through all events and creates a hash with different lists of points sorted by metric
+  def createPointHash(events)
     pointHash = Hash.new
 
     previousDate = 0
@@ -91,7 +107,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
       else
         timesSinceLastOffset = 1
         lastStoredDate = timestamp
-      end 
+      end
 
       # insert the current point in our list
       pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
@@ -102,17 +118,8 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
     end #end do
 
-    documents = []
-
-    # iterate through pointHash and create a solr document
-    pointHash.each { |metric, phash|
-      documents << createSolrDocument(metric, phash)
-    }
-
-    # send to chronix
-    @solr.add documents
-    @solr.update :data => '<commit/>'
-  end #def flush
+    return pointHash
+  end
 
   # this method zips and base64 encodes the list of points
   def zipAndEncode(points)
@@ -139,15 +146,17 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]), :threshold => @threshold }
   end
 
+  # checks if two offsets are almost equals
   def almostEquals(delta, previousOffset)
     diff = (delta - previousOffset).abs
 
     return (diff <= @threshold)
   end
 
+  # checks if there is a drift
   def noDrift(timestamp, lastStoredDate, timesSinceLastOffset)
     calcMaxOffset = @threshold * timesSinceLastOffset
-    drift = lastStoredDate + calcMaxOffset + timestamp.to_i
+    drift = lastStoredDate + calcMaxOffset - timestamp.to_i
 
     return (drift <= (@threshold / 2))
   end
