@@ -36,7 +36,8 @@ describe LogStash::Outputs::Chronix do
   end
 
   context "test basic functions zip and encode, createPoint, createDocument" do
-    subject { LogStash::Outputs::Chronix.new( "flush_size" => 3, "idle_flush_time" => 10 ) }
+    # no flushing of the buffer needed, that's why we use 3 as flush_size here
+    subject { LogStash::Outputs::Chronix.new( "threshold" => 10, "flush_size" => 3, "idle_flush_time" => 10 ) }
 
     let(:ttimestamp) { "1459353272" }
     let(:tmetric) { "test1" }
@@ -67,7 +68,7 @@ describe LogStash::Outputs::Chronix do
       points.p << subject.createChronixPoint(ttimestamp, tvalue)
       phash = {"startTime" => ttimestamp, "delta" => 0, "lastTimestamp" => ttimestamp, "points" => points}
       document = subject.createSolrDocument(tmetric, phash)
-      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==" }
+      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==", :threshold => 10 }
       expect(document).to eq(sampleDoc)
     end
 

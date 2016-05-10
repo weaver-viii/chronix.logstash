@@ -27,6 +27,9 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   # path to chronix, default: /solr/chronix/
   config :path, :validate => :string, :default => "/solr/chronix/"
 
+  # threshold for delta-calculation, every delta < threashold will be nulled
+  config :threshold, :validate => :number, :default => 10
+
   # Number of events to queue up before writing to Solr
   config :flush_size, :validate => :number, :default => 100
 
@@ -120,15 +123,14 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   def createSolrDocument(metric, phash)
     endTime = phash["lastTimestamp"] # maybe use startTime + delta here?!
-    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]) }
+    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]), :threshold => @threshold }
   end
 
   def calculateDelta(timestamp, lastTimestamp)
-    threshold = 10
     offset = timestamp - lastTimestamp
 
     # if the current offset is less than threshold, return nil -> don't save the offset
-    if offset <= threshold
+    if offset <= @threshold
       return 0
     else
       return offset
