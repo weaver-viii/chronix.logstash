@@ -63,6 +63,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
     # add each event to our hash, sorted by metrics as key
     events.each do |event|
+
       eventData = event.to_hash()
 
       # format the timestamp to unix format
@@ -71,7 +72,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => timestamp, "points" => Chronix::Points.new}
+        pointHash[metric] = {"startTime" => timestamp, "delta" => 0, "lastTimestamp" => timestamp, "points" => Chronix::Points.new}
       end
 
       delta = calculateDelta(timestamp, pointHash[metric]["lastTimestamp"])
@@ -84,7 +85,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
       pointHash[metric]["delta"] = pointHash[metric]["delta"] + delta
 
     end #end do
-    
+
     documents = []
 
     # iterate through pointHash and create a solr document
@@ -114,15 +115,11 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   end
 
   def createChronixPoint(delta, value)
-    if delta == nil
-      return Chronix::Point.new( :v => value )
-    else
-      return Chronix::Point.new( :t => delta, :v => value )
-    end
+    return Chronix::Point.new( :t => delta, :v => value )
   end
 
   def createSolrDocument(metric, phash)
-    endTime = phash["startTime"] + phash["delta"]
+    endTime = phash["lastTimestamp"] # maybe use startTime + delta here?!
     return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]) }
   end
 
@@ -132,7 +129,7 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
     # if the current offset is less than threshold, return nil -> don't save the offset
     if offset <= threshold
-      return nil
+      return 0
     else
       return offset
     end

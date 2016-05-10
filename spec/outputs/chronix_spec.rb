@@ -50,7 +50,7 @@ describe LogStash::Outputs::Chronix do
     end
 
     it "should return a Chronix::Point with :t == 0" do
-      point = subject.createChronixPoint(nil, tvalue)    
+      point = subject.createChronixPoint(0, tvalue)    
       expectedResult = Chronix::Point.new( :t => 0, :v => tvalue )
       expect(point).to eq(expectedResult)
     end
@@ -65,7 +65,7 @@ describe LogStash::Outputs::Chronix do
     it "should create a valid document" do
       points = Chronix::Points.new
       points.p << subject.createChronixPoint(ttimestamp, tvalue)
-      phash = {"startTime" => ttimestamp, "lastTimestamp" => ttimestamp, "points" => points}
+      phash = {"startTime" => ttimestamp, "delta" => 0, "lastTimestamp" => ttimestamp, "points" => points}
       document = subject.createSolrDocument(tmetric, phash)
       sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==" }
       expect(document).to eq(sampleDoc)
@@ -77,9 +77,9 @@ describe LogStash::Outputs::Chronix do
     end
   end
 
-  context "test delta calculation" do
+#  context "test delta calculation" do
     # TODO
-  end
+#  end
 
   # these events are needed for the next two test-contexts
   e1 = LogStash::Event.new("metric" => "test1", "value" => "1.5")
@@ -126,6 +126,7 @@ describe LogStash::Outputs::Chronix do
   # test2[0]: 1 elem, test2[1]: 2 elem
   # test3[0]: 1 elem
   context "adding and removing tests with different metrics and buffer-settings" do
+
     subject { LogStash::Outputs::Chronix.new( "flush_size" => 4, "idle_flush_time" => 10 ) }
 
     let(:events) { [e1, e2, e3, e4, e5, e6, e7, e8] }
