@@ -91,15 +91,19 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => timestamp, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 1, "lastStoredDate" => timestamp}
+        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
       end
 
-      delta = timestamp - pointHash[metric]["lastTimestamp"]
+      if pointHash[metric]["lastTimestamp"] == 0
+        delta = 0
+      else
+        delta = timestamp - pointHash[metric]["lastTimestamp"]
+      end
 
       if (almostEquals(delta, pointHash[metric]["prevDelta"]) && noDrift(timestamp, pointHash[metric]["lastStoredDate"], pointHash[metric]["timeSinceLastDelta"]))
         # insert the current point in our list
         pointHash[metric]["points"].p << createChronixPoint(0, eventData["value"])
-        
+
         pointHash[metric]["timeSinceLastDelta"] += 1
 
       else

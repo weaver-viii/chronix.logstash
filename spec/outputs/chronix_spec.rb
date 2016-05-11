@@ -127,10 +127,27 @@ describe LogStash::Outputs::Chronix do
       expect(subject.noDrift(10, 5, 2)).to be false
     end
 
-    it "should return a point hash" do
+    it "should return a point hash with the correct timestamps aka delta" do
       pointHash = subject.createPointHash(p_ev)
-#      puts pointHash
-      expect(pointHash).to_not be_nil
+
+      points = Chronix::Points.new
+      points.p << subject.createChronixPoint(0, "1.0")
+      points.p << subject.createChronixPoint(0, "2.0")
+      points.p << subject.createChronixPoint(0, "3.0")
+      points.p << subject.createChronixPoint(0, "4.0")
+      points.p << subject.createChronixPoint(0, "5.0")
+      points.p << subject.createChronixPoint(0, "6.0")
+      points.p << subject.createChronixPoint(0, "7.0")
+      points.p << subject.createChronixPoint(0, "8.0")
+      points.p << subject.createChronixPoint(9, "9.0")
+      points.p << subject.createChronixPoint(0, "10.0")
+      points.p << subject.createChronixPoint(0, "11.0")
+      points.p << subject.createChronixPoint(0, "12.0")
+      points.p << subject.createChronixPoint(0, "13.0")
+      points.p << subject.createChronixPoint(0, "14.0")
+      points.p << subject.createChronixPoint(9, "15.0")
+      
+      expect(pointHash["test1"]["points"]).to eq(points)
     end
   end
 
