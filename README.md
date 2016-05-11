@@ -2,11 +2,11 @@
 
 [![Build Status](https://travis-ci.org/ChronixDB/chronix.logstash.svg?branch=master)](https://travis-ci.org/ChronixDB/chronix.logstash)
 
-This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the Apache 2.0 license.
+This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the [Apache 2.0 License](LICENSE).
 
 ## Install the plugin
 
-There are two options to install the plugin. (check also the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference)
+There are two options to install the plugin. Install via gem install or manual install (check also the [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference).
 
 ### Install via gem install
 Just type 
