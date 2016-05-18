@@ -42,6 +42,7 @@ describe LogStash::Outputs::Chronix do
     let(:ttimestamp) { "1459353272" }
     let(:tmetric) { "test1" }
     let(:tvalue) { "10.5" }
+    let(:svalue) { "string" }
     let(:events) { [LogStash::Event.new("metric" => tmetric, "value" => tvalue)] }
 
     it "should return a Chronix::Point" do
@@ -50,9 +51,9 @@ describe LogStash::Outputs::Chronix do
       expect(point).to eq(expectedResult)
     end
 
-    it "should return a Chronix::Point with :t == 0" do
-      point = subject.createChronixPoint(0, tvalue)    
-      expectedResult = Chronix::Point.new( :t => 0, :v => tvalue )
+    it "should return a Chronix::StracePoint" do
+      point = subject.createChronixPoint(0, svalue, "strace")    
+      expectedResult = Chronix::StracePoint.new( :t => 0, :v => svalue )
       expect(point).to eq(expectedResult)
     end
  

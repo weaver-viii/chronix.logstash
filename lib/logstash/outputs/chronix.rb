@@ -12,6 +12,7 @@ require "rubygems"
 require "stud/buffer"
 require "zlib"
 require_relative "proto/Point.rb"
+require_relative "proto/StracePoint.rb"
 
 class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   include Stud::Buffer
@@ -102,13 +103,13 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       if (almostEquals(delta, pointHash[metric]["prevDelta"]) && noDrift(timestamp, pointHash[metric]["lastStoredDate"], pointHash[metric]["timeSinceLastDelta"]))
         # insert the current point in our list
-        pointHash[metric]["points"].p << createChronixPoint(0, eventData["value"])
+        pointHash[metric]["points"].p << createChronixPoint(0, eventData["value"], eventData["chronix_type"])
 
         pointHash[metric]["timeSinceLastDelta"] += 1
 
       else
         # insert the current point in our list
-        pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"])
+        pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"], eventData["chronix_type"])
 
         pointHash[metric]["timeSinceLastDelta"] = 1
         pointHash[metric]["lastStoredDate"] = timestamp
@@ -139,8 +140,12 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     return Base64.strict_encode64(data)
   end
 
-  def createChronixPoint(delta, value)
-    return Chronix::Point.new( :t => delta, :v => value )
+  def createChronixPoint(delta, value, type = "")
+    if type == "strace"
+      return Chronix::StracePoint.new( :t => delta, :v => value )
+    else
+      return Chronix::Point.new( :t => delta, :v => value )
+    end
   end
 
   def createSolrDocument(metric, phash)
