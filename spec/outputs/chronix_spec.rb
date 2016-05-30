@@ -77,7 +77,7 @@ describe LogStash::Outputs::Chronix do
       points.p << subject.createChronixPoint(ttimestamp, tvalue)
       phash = {"startTime" => ttimestamp, "lastTimestamp" => ttimestamp, "points" => points}
       document = subject.createSolrDocument(tmetric, phash)
-      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==", :threshold => 10 }
+      sampleDoc = { :metric => tmetric, :start => phash["startTime"], :end => phash["lastTimestamp"], :data => "H4sIAAAAAAAA/+Pi59jx9v12VkEGMFB1AACWVOXHEQAAAA==" }
       expect(document).to eq(sampleDoc)
     end
 
