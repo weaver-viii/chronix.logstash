@@ -6,12 +6,12 @@ This is a plugin for [Logstash](https://github.com/elastic/logstash) to write ti
 
 ## Install the plugin
 
-There are two options to install the plugin. Install via gem install or manual install (check also the [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference).
+There are two options to install the plugin. (check also the [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference).
 
-### Install via gem install
+### Install via rubygems and plugin install
 Just type 
 ```sh
-gem install logstash-output-chronix
+$LOGSTASH_HOME/bin/plugin install logstash-output-chronix
 ```
 to install the plugin. See the [configuration-section](#configuration) for configuration options.
 
