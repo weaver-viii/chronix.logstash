@@ -150,7 +150,8 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   def createSolrDocument(metric, phash)
     endTime = phash["lastTimestamp"] # maybe use startTime + delta here?!
-    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]), :threshold => @threshold }
+    # TODO add more meta-data
+    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]) }
   end
 
   # checks if two offsets are almost equals
