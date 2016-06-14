@@ -72,6 +72,14 @@ describe LogStash::Outputs::Chronix do
       expect(subject.createPointHash(events)).to eq(phash)
     end
 
+    it "should create a correct point hash with a StracePoint" do
+      points = Chronix::StracePoints.new
+      points.p << subject.createChronixPoint(0, svalue, "strace")
+      phash = {tmetric => {"startTime" => ttimestamp.to_i, "lastTimestamp" => ttimestamp.to_i, "points" => points, "prevDelta" => 0, "timeSinceLastDelta" => 1, "lastStoredDate" => ttimestamp.to_i}}
+      events = [LogStash::Event.new("metric" => tmetric, "value" => svalue, "@timestamp" => "2016-03-30T15:54:32.172Z", "chronix_type" => "strace")]
+      expect(subject.createPointHash(events)).to eq(phash)
+    end
+
     it "should create a valid document" do
       points = Chronix::Points.new
       points.p << subject.createChronixPoint(ttimestamp, tvalue)

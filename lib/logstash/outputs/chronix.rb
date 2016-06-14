@@ -92,7 +92,11 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
       # if there is no list for the current metric -> create a new one
       if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
+        if eventData["chronix_type"] == "strace"
+          pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::StracePoints.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
+        else
+          pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
+        end
       end
 
       if pointHash[metric]["lastTimestamp"] == 0
