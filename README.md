@@ -2,13 +2,22 @@
 
 [![Build Status](https://travis-ci.org/ChronixDB/chronix.logstash.svg?branch=master)](https://travis-ci.org/ChronixDB/chronix.logstash)
 
-This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the Apache 2.0 license.
+This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the [Apache 2.0 License](LICENSE).
 
 ## Install the plugin
 
-There are two options to install the plugin. (check one the official [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference)
+There are two options to install the plugin. (check also the [Logstash Repos](https://github.com/logstash-plugins/logstash-output-example#2-running-your-unpublished-plugin-in-logstash) for reference).
 
-### Install in a local Logstash Clone:
+### Install via rubygems and plugin install
+Just type 
+```sh
+$LOGSTASH_HOME/bin/plugin install logstash-output-chronix
+```
+to install the plugin. See the [configuration-section](#configuration) for configuration options.
+
+### Install manually
+
+#### Install in a local Logstash Clone
 - Edit Logstash `Gemfile` and add the local plugin path, for example:
 ```ruby
 gem "logstash-output-chronix", :path => "/path/to/logstash-output-chronix"
@@ -22,7 +31,7 @@ bin/plugin install --no-verify
 bin/logstash -e your_config.conf
 ```
 
-### Run in an installed Logstash
+#### Run in an installed Logstash
 
 You can use the same method to run your plugin in an installed Logstash by editing its `Gemfile` and pointing the `:path` to your local plugin development directory or you can build the gem and install it using:
 
@@ -39,8 +48,8 @@ bin/plugin install /path/to/logstash/plugin/logstash-output-chronix.gem
 
 ## Configuration
 
-Chronix always needs a 'metric' to store your data.
-During the filter-phase you should at least add a metric-field to your data:
+Chronix always needs a 'metric' and a 'value' to store your data.
+If your data doesn't contain a metric yet, you should add one during the filter-phase:
 ```
 filter {
   mutate { add_field => { "metric" => "your_metric" } }
@@ -54,6 +63,7 @@ chronix {
   host => "192.168.0.1"       # default is 'localhost'
   port => "8983"              # default is '8983'
   path => "/solr/chronix/"    # default is '/solr/chronix/'
+  threshold => 10             # default is 10 (every delta with (delta - prev_delta) < threshold will be nulled)
   flush_size => 100           # default is '100' (Number of events to queue up before writing to Solr)
   idle_flush_time => 30       # default is '30'  (Amount of time since the last flush before a flush is done)
 }

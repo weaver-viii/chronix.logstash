@@ -12,6 +12,7 @@ require "rubygems"
 require "stud/buffer"
 require "zlib"
 require_relative "proto/Point.rb"
+require_relative "proto/StracePoint.rb"
 
 class LogStash::Outputs::Chronix < LogStash::Outputs::Base
   include Stud::Buffer
@@ -26,6 +27,9 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   # path to chronix, default: /solr/chronix/
   config :path, :validate => :string, :default => "/solr/chronix/"
+
+  # threshold for delta-calculation, every (delta - prev_delta) < threshold will be nulled
+  config :threshold, :validate => :number, :default => 10
 
   # Number of events to queue up before writing to Solr
   config :flush_size, :validate => :number, :default => 100
@@ -59,28 +63,8 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
 
   public
   def flush(events, close=false)
-    pointHash = Hash.new
+    pointHash = createPointHash(events)
 
-    # add each event to our hash, sorted by metrics as key
-    events.each do |event|
-      eventData = event.to_hash()
-
-      # format the timestamp to unix format
-      timestamp = DateTime.iso8601("#{eventData["@timestamp"]}").to_time.to_i
-      metric = eventData["metric"]
-
-      # if there is no list for the current metric -> create a new one
-      if pointHash[metric] == nil
-        pointHash[metric] = {"startTime" => timestamp, "endTime" => timestamp, "points" => Chronix::Points.new}
-      end
-
-      pointHash[metric]["endTime"] = timestamp
-
-      # insert the current point in our list
-      pointHash[metric]["points"].p << createChronixPoint(timestamp, eventData["value"])
-
-    end #end do
-    
     documents = []
 
     # iterate through pointHash and create a solr document
@@ -92,6 +76,57 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     @solr.add documents
     @solr.update :data => '<commit/>'
   end #def flush
+
+  # this method iterates through all events and creates a hash with different lists of points sorted by metric
+  def createPointHash(events)
+    pointHash = Hash.new
+
+    # add each event to our hash, sorted by metrics as key
+    events.each do |event|
+
+      eventData = event.to_hash()
+
+      # format the timestamp to unix format
+      timestamp = DateTime.iso8601("#{eventData["@timestamp"]}").to_time.to_i
+      metric = eventData["metric"]
+
+      # if there is no list for the current metric -> create a new one
+      if pointHash[metric] == nil
+        if eventData["chronix_type"] == "strace"
+          pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::StracePoints.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
+        else
+          pointHash[metric] = {"startTime" => timestamp, "lastTimestamp" => 0, "points" => Chronix::Points.new, "prevDelta" => 0, "timeSinceLastDelta" => 0, "lastStoredDate" => timestamp}
+        end
+      end
+
+      if pointHash[metric]["lastTimestamp"] == 0
+        delta = 0
+      else
+        delta = timestamp - pointHash[metric]["lastTimestamp"]
+      end
+
+      if (almostEquals(delta, pointHash[metric]["prevDelta"]) && noDrift(timestamp, pointHash[metric]["lastStoredDate"], pointHash[metric]["timeSinceLastDelta"]))
+        # insert the current point in our list
+        pointHash[metric]["points"].p << createChronixPoint(0, eventData["value"], eventData["chronix_type"])
+
+        pointHash[metric]["timeSinceLastDelta"] += 1
+
+      else
+        # insert the current point in our list
+        pointHash[metric]["points"].p << createChronixPoint(delta, eventData["value"], eventData["chronix_type"])
+
+        pointHash[metric]["timeSinceLastDelta"] = 1
+        pointHash[metric]["lastStoredDate"] = timestamp
+      end
+
+      # save current timestamp as lastTimestamp and the previousOffset
+      pointHash[metric]["lastTimestamp"] = timestamp
+      pointHash[metric]["prevDelta"] = delta
+
+    end #end do
+
+    return pointHash
+  end
 
   # this method zips and base64 encodes the list of points
   def zipAndEncode(points)
@@ -109,12 +144,33 @@ class LogStash::Outputs::Chronix < LogStash::Outputs::Base
     return Base64.strict_encode64(data)
   end
 
-  def createChronixPoint(timestamp, value)
-    return Chronix::Point.new( :t => timestamp, :v => value )
+  def createChronixPoint(delta, value, type = "")
+    if type == "strace"
+      return Chronix::StracePoint.new( :t => delta, :v => value )
+    else
+      return Chronix::Point.new( :t => delta, :v => value )
+    end
   end
 
   def createSolrDocument(metric, phash)
-    return { :metric => metric, :start => phash["startTime"], :end => phash["endTime"], :data => zipAndEncode(phash["points"]) }
+    endTime = phash["lastTimestamp"] # maybe use startTime + delta here?!
+    # TODO add more meta-data
+    return { :metric => metric, :start => phash["startTime"], :end => endTime, :data => zipAndEncode(phash["points"]) }
+  end
+
+  # checks if two offsets are almost equals
+  def almostEquals(delta, prevDelta)
+    diff = (delta - prevDelta).abs
+
+    return (diff <= @threshold)
+  end
+
+  # checks if there is a drift
+  def noDrift(timestamp, lastStoredDate, timeSinceLastDelta)
+    calcMaxOffset = @threshold * timeSinceLastDelta
+    drift = lastStoredDate + calcMaxOffset - timestamp.to_i
+
+    return (drift <= (@threshold / 2))
   end
 
 end # class LogStash::Outputs::Chronix

@@ -1,0 +1,15 @@
+syntax = "proto3";
+option optimize_for = SPEED;
+
+//Our point
+message StringPoint {
+    //The date as int64 (java long)
+    int64 t = 1;
+    string v = 2;
+}
+
+//The data of a time series is a list of points
+message StringPoints {
+    //The list of points
+    repeated StracePoint p = 1;
+}

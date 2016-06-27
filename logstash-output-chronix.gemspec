@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-output-chronix'
-  s.version         = "0.9.1"
+  s.version         = "0.1.3"
   s.licenses = ["Apache License (2.0)"]
   s.summary = "This output stores your logs in chronix"
-  s.description = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program"
+  s.description = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install logstash-output-chronix. This gem is not a stand-alone program"
   s.authors = ["Max Jalowski"]
   s.email = "max.jalowski@fau.de"
   s.homepage = "http://www.elastic.co/guide/en/logstash/current/index.html"
@@ -23,5 +23,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "stud"
   s.add_runtime_dependency "rsolr"
   s.add_runtime_dependency "protobuf"
-  s.add_development_dependency "logstash-devutils"
+  s.add_development_dependency "logstash-devutils", ">= 0.0.19", "< 0.0.20"
 end
