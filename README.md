@@ -1,6 +1,7 @@
 # Logstash Plugin
 
 [![Build Status](https://travis-ci.org/ChronixDB/chronix.logstash.svg?branch=master)](https://travis-ci.org/ChronixDB/chronix.logstash)
+[![Dependency Status](https://dependencyci.com/github/ChronixDB/chronix.logstash/badge)](https://dependencyci.com/github/ChronixDB/chronix.logstash)
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash) to write time series to [Chronix](https://github.com/ChronixDB) released under the [Apache 2.0 License](LICENSE).
 
